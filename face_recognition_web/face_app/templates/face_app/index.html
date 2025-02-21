@@ -1,0 +1,78 @@
+{% extends 'face_app/base.html' %}
+{% load static %}
+
+{% block title %}Face Recognition System - Home{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="display-4">Face Recognition</h1>    
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body text-center p-5">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="camera-placeholder mb-4">
+                            <img src="{% static 'img/camera-placeholder.png' %}" alt="Camera Placeholder" class="img-fluid rounded" id="uploadedImage">
+                        </div>
+                        <a href="{% url 'live_detection' %}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-video me-2"></i>Start Camera
+                        </a>
+                        <p class="text-muted mt-3">Enliven your world with the life of time animation.</p>
+                    </div>
+                    <div class="col-md-6 d-flex flex-column justify-content-center">
+                        <div class="upload-area p-4 border rounded mb-4">
+                            <h3 class="h5 mb-3">Upload Photo</h3>
+                            <form id="uploadForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" id="photoUpload" name="photo" accept="image/*">
+                                </div>
+                                <button type="button" id="uploadButton" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-upload me-2"></i>Upload
+                                </button>
+                            </form>
+                        </div>
+                        <button class="btn btn-info btn-lg" disabled>
+                            Start Next
+                        </button>
+                    </div>
+                </div>
+                <div id="resultContainer" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("uploadButton").addEventListener("click", function () {
+    let formData = new FormData(document.getElementById("uploadForm"));
+    
+    fetch("{% url 'upload_image' %}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        let resultContainer = document.getElementById("resultContainer");
+        resultContainer.innerHTML = "";
+        
+        if (data.success) {
+            data.faces.forEach(face => {
+                resultContainer.innerHTML += `<p><strong>${face.name}</strong> - Confidence: ${face.confidence}</p>`;
+            });
+        } else {
+            resultContainer.innerHTML = `<p class="text-danger">${data.error}</p>`;
+        }
+    })
+    .catch(error => console.error("Error:", error));
+});
+</script>
+{% endblock %}
